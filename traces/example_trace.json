@@ -1,0 +1,66 @@
+{
+  "thread_id": "multi-agent-demo-001",
+  "note": "Ejemplo auditable. La ejecución real genera traces/latest_trace.json.",
+  "events": [
+    {
+      "position": 1,
+      "node": "supervisor",
+      "next_agent": "researcher",
+      "supervisor_reason": "Falta evidencia con valores, períodos y fuentes."
+    },
+    {
+      "position": 2,
+      "node": "researcher",
+      "contributions": [
+        {
+          "agent": "researcher",
+          "status": "success",
+          "summary": "Se recuperaron métricas de 2023 y 2024.",
+          "source_ids": ["market-report-2023", "market-report-2024"]
+        }
+      ]
+    },
+    {
+      "position": 3,
+      "node": "supervisor",
+      "next_agent": "analyst",
+      "supervisor_reason": "La evidencia es suficiente; falta calcular la variación."
+    },
+    {
+      "position": 4,
+      "node": "analyst",
+      "analysis_output": {
+        "metric": "Variación porcentual 2023-2024",
+        "start_value": 120.0,
+        "end_value": 144.0,
+        "result": 20.0,
+        "formula": "((valor_final - valor_inicial) / valor_inicial) * 100",
+        "interpretation": "El indicador aumentó 20% entre 2023 y 2024.",
+        "confidence": 1.0
+      }
+    },
+    {
+      "position": 5,
+      "node": "supervisor",
+      "next_agent": "synthesizer",
+      "supervisor_reason": "Investigación y análisis cumplen la rúbrica; falta el informe."
+    },
+    {
+      "position": 6,
+      "node": "synthesizer",
+      "final_report": {
+        "title": "Crecimiento del mercado solar",
+        "executive_summary": "La base simulada muestra un crecimiento del 20% entre 2023 y 2024.",
+        "evidence": ["market-report-2023", "market-report-2024"],
+        "recommendation": "Profundizar el análisis con fuentes reales antes de decidir una inversión.",
+        "limitations": ["Las cifras de esta demostración son simuladas."]
+      }
+    },
+    {
+      "position": 7,
+      "node": "supervisor",
+      "next_agent": "FINISH",
+      "supervisor_reason": "El informe cumple la rúbrica y la tarea está completa."
+    }
+  ]
+}

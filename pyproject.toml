@@ -1,0 +1,49 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "langgraph-multi-agent-orchestrator"
+version = "1.0.0"
+description = "Orquestador multi-agente jerárquico con Supervisor, especialistas y LangGraph"
+readme = "README.md"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    "langchain-core>=1.0,<2.0",
+    "langchain-openai>=1.0,<2.0",
+    "langgraph>=1.2,<2.0",
+    "langgraph-checkpoint-sqlite>=3.0,<4.0",
+    "pydantic>=2.10,<3.0",
+    "python-dotenv>=1.0,<2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "mypy>=1.15,<2.0",
+    "pytest>=8.3,<10.0",
+    "pytest-asyncio>=0.25,<2.0",
+    "ruff>=0.11,<1.0",
+]
+notebook = ["jupyterlab>=4.3,<5.0"]
+
+[project.scripts]
+multi-agent-demo = "multi_agent_orchestrator.main:run"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/multi_agent_orchestrator"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+packages = ["multi_agent_orchestrator"]

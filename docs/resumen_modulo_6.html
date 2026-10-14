@@ -12,14 +12,17 @@
       --surface-2: #132637;
       --line: #254158;
       --text: #edf7ff;
+      --body: #cfdeea;
       --muted: #9db3c4;
       --cyan: #31d7e8;
       --green: #8bea72;
       --amber: #ffc857;
       --red: #ff7b7b;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
     }
     * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
+    html { scroll-behavior: smooth; scroll-padding-top: 16px; }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
     body {
       margin: 0;
       background:
@@ -27,190 +30,390 @@
         var(--bg);
       color: var(--text);
       font: 16px/1.65 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
     }
-    .layout { display: grid; grid-template-columns: 260px minmax(0, 920px); gap: 44px; max-width: 1260px; margin: auto; padding: 40px 28px 80px; }
-    nav { position: sticky; top: 24px; align-self: start; background: rgba(14, 27, 39, .9); border: 1px solid var(--line); border-radius: 18px; padding: 22px; }
+    a { color: var(--cyan); }
+    :focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; border-radius: 4px; }
+    .layout { display: grid; grid-template-columns: 250px minmax(0, 900px); gap: 44px; max-width: 1240px; margin: auto; padding: 40px 28px 80px; }
+    nav { position: sticky; top: 24px; align-self: start; max-height: calc(100vh - 48px); overflow: auto; background: rgba(14, 27, 39, .92); border: 1px solid var(--line); border-radius: 18px; padding: 22px; }
     nav strong { display: block; color: var(--cyan); letter-spacing: .08em; font-size: .78rem; text-transform: uppercase; margin-bottom: 12px; }
-    nav a { display: block; color: var(--muted); text-decoration: none; padding: 6px 0; }
+    nav ol { list-style: none; margin: 0; padding: 0; counter-reset: s; }
+    nav li { counter-increment: s; }
+    nav a { display: grid; grid-template-columns: 28px 1fr; color: var(--muted); text-decoration: none; padding: 5px 0; font-size: .93rem; line-height: 1.35; }
+    nav a::before { content: counter(s, decimal-leading-zero); font-family: var(--mono); font-size: .75rem; color: #5f8299; padding-top: 2px; }
     nav a:hover { color: var(--text); }
     main { min-width: 0; }
     .eyebrow { color: var(--cyan); letter-spacing: .12em; text-transform: uppercase; font-weight: 800; font-size: .78rem; }
-    h1 { font-size: clamp(2.5rem, 7vw, 5rem); line-height: .98; margin: 18px 0 22px; letter-spacing: -.05em; }
+    h1 { font-size: clamp(2.4rem, 7vw, 4.6rem); line-height: 1; margin: 18px 0 22px; letter-spacing: -.045em; }
     h1 span { color: var(--green); }
-    h2 { margin: 64px 0 18px; font-size: 2rem; letter-spacing: -.025em; }
-    h3 { margin-top: 26px; }
-    p, li { color: #cfdeea; }
-    .lead { font-size: 1.22rem; max-width: 760px; color: var(--muted); }
-    .hero { padding: 28px 0 40px; }
-    .pill { display: inline-block; border: 1px solid #2d6073; border-radius: 999px; padding: 4px 11px; color: var(--cyan); margin: 14px 8px 0 0; font-size: .85rem; }
-    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-    .card { background: linear-gradient(145deg, var(--surface), #0a1620); border: 1px solid var(--line); border-radius: 18px; padding: 22px; }
-    .card h3 { margin: 0 0 8px; color: var(--text); }
-    .card p { margin: 0; }
-    .number { color: var(--green); font-weight: 900; font-size: 1.9rem; }
-    .flow { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: 10px; align-items: center; margin: 26px 0; }
-    .node { text-align: center; border: 1px solid #347086; border-radius: 14px; background: var(--surface-2); padding: 16px 10px; font-weight: 800; }
-    .arrow { color: var(--cyan); font-size: 1.5rem; }
-    .loop { border-left: 3px solid var(--green); padding: 12px 18px; background: rgba(139, 234, 114, .06); border-radius: 0 12px 12px 0; }
-    code { color: #b9f5ff; background: #061019; border: 1px solid #1b3548; padding: .12rem .38rem; border-radius: 6px; }
-    pre { overflow: auto; background: #050c12; border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
-    pre code { border: 0; padding: 0; }
-    table { width: 100%; border-collapse: collapse; overflow: hidden; border-radius: 14px; }
-    th, td { border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; padding: 13px; }
-    th { background: var(--surface-2); color: var(--cyan); }
-    td { color: #cfdeea; }
-    .warning { border-color: #6b5522; background: rgba(255, 200, 87, .06); }
+    h2 { margin: 72px 0 8px; font-size: clamp(1.55rem, 4vw, 2rem); line-height: 1.2; letter-spacing: -.02em; }
+    h2 .n { font-family: var(--mono); font-size: .95rem; color: var(--cyan); margin-right: 10px; letter-spacing: 0; }
+    h3 { margin: 30px 0 8px; font-size: 1.15rem; }
+    p, li { color: var(--body); }
+    .sub { color: var(--muted); margin-top: 0; }
+    .lead { font-size: 1.2rem; max-width: 760px; color: var(--muted); }
+    .hero { padding: 24px 0 24px; }
+    .pill { display: inline-block; border: 1px solid #2d6073; border-radius: 999px; padding: 4px 11px; color: var(--cyan); margin: 10px 8px 0 0; font-size: .85rem; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 18px 0; }
+    .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .card { background: linear-gradient(145deg, var(--surface), #0a1620); border: 1px solid var(--line); border-radius: 16px; padding: 20px; min-width: 0; }
+    .card h3 { margin: 0 0 8px; color: var(--text); font-size: 1.08rem; }
+    .card p { margin: 0 0 8px; }
+    .card p:last-child { margin-bottom: 0; }
+    .card .tag { font-family: var(--mono); font-size: .78rem; color: var(--cyan); }
+    .number { color: var(--green); font-weight: 900; font-size: 1.7rem; font-family: var(--mono); }
+    .diagram { font-family: var(--mono); font-size: .82rem; line-height: 1.45; color: #b9f5ff; background: #050c12; border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin: 12px 0 10px; white-space: pre; overflow-x: auto; }
+    .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 22px 0; }
+    .node { border: 1px solid #347086; border-radius: 12px; background: var(--surface-2); padding: 10px 14px; font-weight: 700; font-size: .95rem; }
+    .node.sup { border-color: var(--green); color: var(--green); }
+    .node.end { border-style: dashed; color: var(--muted); }
+    .arrow { color: var(--cyan); font-weight: 700; }
+    .note { border-left: 3px solid var(--green); padding: 12px 18px; background: rgba(139, 234, 114, .06); border-radius: 0 12px 12px 0; margin: 18px 0; }
+    .note.warn { border-color: var(--amber); background: rgba(255, 200, 87, .07); }
+    .note p { margin: 0; }
+    .note p + p { margin-top: 8px; }
+    code { font-family: var(--mono); font-size: .88em; color: #b9f5ff; background: #061019; border: 1px solid #1b3548; padding: .1rem .36rem; border-radius: 6px; overflow-wrap: anywhere; }
+    pre { overflow-x: auto; background: #050c12; border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; font-size: .86rem; line-height: 1.55; }
+    pre code { border: 0; padding: 0; background: none; overflow-wrap: normal; }
+    .c { color: #6f8ba0; font-style: italic; }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; margin: 16px 0; }
+    table { width: 100%; border-collapse: collapse; min-width: 560px; }
+    th, td { border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; padding: 12px 14px; }
+    tr:last-child td, tr:last-child th { border-bottom: 0; }
+    thead th { background: var(--surface-2); color: var(--cyan); font-size: .9rem; }
+    tbody th { color: var(--text); white-space: nowrap; }
+    td { color: var(--body); }
+    .table-wrap.glossary table { min-width: 0; }
+    .table-wrap.glossary tbody th { white-space: normal; width: 30%; }
+    .ok { color: var(--green); font-weight: 700; }
+    .bad { color: var(--red); font-weight: 700; }
+    .warning { border-color: #6b5522; background: linear-gradient(145deg, rgba(255, 200, 87, .06), #0a1620); }
     .warning h3 { color: var(--amber); }
-    .check li::marker { color: var(--green); }
-    footer { margin-top: 70px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 24px; }
-    @media (max-width: 860px) {
-      .layout { display: block; padding: 24px 18px 60px; }
-      nav { position: static; margin-bottom: 34px; }
-      .grid { grid-template-columns: 1fr; }
-      .flow { grid-template-columns: 1fr; }
-      .arrow { transform: rotate(90deg); text-align: center; }
+    .steps { counter-reset: st; list-style: none; padding: 0; margin: 18px 0; }
+    .steps li { counter-increment: st; position: relative; padding: 12px 14px 12px 56px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); margin-bottom: 10px; }
+    .steps li::before { content: counter(st); position: absolute; left: 14px; top: 11px; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-2); border: 1px solid #347086; color: var(--cyan); font-family: var(--mono); font-size: .82rem; }
+    .steps b { color: var(--text); }
+    footer { margin-top: 72px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 24px; font-size: .92rem; }
+    @media (max-width: 900px) {
+      .layout { display: block; padding: 24px 16px 60px; }
+      nav { position: static; max-height: none; margin-bottom: 30px; }
+      nav ol { columns: 2; column-gap: 16px; }
+      .grid, .grid.three { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 480px) {
+      nav ol { columns: 1; }
+      body { font-size: 15.5px; }
+    }
+    @media print {
+      body { background: #fff; color: #000; }
+      nav { display: none; }
+      .layout { display: block; }
     }
   </style>
 </head>
 <body>
   <div class="layout">
     <nav aria-label="Índice del módulo">
-      <strong>Módulo 06</strong>
-      <a href="#idea">1. La idea central</a>
-      <a href="#topologias">2. Topologías</a>
-      <a href="#supervisor">3. Patrón Supervisor</a>
-      <a href="#estado">4. Estado compartido</a>
-      <a href="#async">5. Asyncio</a>
-      <a href="#validacion">6. Pydantic</a>
-      <a href="#entrega">7. La entrega</a>
-      <a href="#errores">8. Errores comunes</a>
-      <a href="#glosario">9. Glosario</a>
+      <strong>Módulo 06 · Índice</strong>
+      <ol>
+        <li><a href="#idea">La idea central</a></li>
+        <li><a href="#topologias">Topologías multi-agente</a></li>
+        <li><a href="#supervisor">Patrón Supervisor</a></li>
+        <li><a href="#especializacion">Especialización</a></li>
+        <li><a href="#aristas">Aristas condicionales</a></li>
+        <li><a href="#estado">Estado compartido</a></li>
+        <li><a href="#aislamiento">Aislamiento de escritura</a></li>
+        <li><a href="#reducers">Reducers</a></li>
+        <li><a href="#async">Asyncio</a></li>
+        <li><a href="#pydantic">Pydantic</a></li>
+        <li><a href="#consistencia">Consistencia del estado</a></li>
+        <li><a href="#entrega">Flujo de la Pre-entrega 6</a></li>
+        <li><a href="#errores">Errores comunes</a></li>
+        <li><a href="#glosario">Glosario</a></li>
+      </ol>
     </nav>
 
     <main>
       <header class="hero">
-        <div class="eyebrow">AI Engineering · Guía para principiantes</div>
+        <div class="eyebrow">AI Engineering · Guía para principiantes · Clase 6</div>
         <h1>Sistemas <span>multi-agente</span><br>con LangGraph</h1>
-        <p class="lead">Un sistema multi-agente divide un problema grande entre especialistas. Un Supervisor observa el progreso, decide quién trabaja después y finaliza únicamente cuando la respuesta cumple la calidad esperada.</p>
-        <span class="pill">Supervisor</span><span class="pill">Especialistas</span><span class="pill">Estado</span><span class="pill">Async</span><span class="pill">Pydantic</span>
+        <p class="lead">Un sistema multi-agente divide un problema grande entre especialistas. Un Supervisor observa el progreso, decide quién trabaja después y termina solo cuando la respuesta cumple la calidad esperada.</p>
+        <span class="pill">Topologías</span><span class="pill">Supervisor</span><span class="pill">Especialistas</span><span class="pill">Estado y reducers</span><span class="pill">asyncio</span><span class="pill">Pydantic</span>
       </header>
 
       <section id="idea">
-        <h2>1. La idea central</h2>
+        <h2><span class="n">01</span>La idea central</h2>
+        <p class="sub">Un solo agente con diez herramientas y un prompt enorme se confunde. Varios agentes chicos, cada uno con un objetivo claro, son más fáciles de controlar, probar y mejorar.</p>
         <div class="grid">
           <article class="card"><div class="number">01</div><h3>Dividir</h3><p>Separar investigación, cálculo y redacción para que cada agente tenga una responsabilidad clara.</p></article>
-          <article class="card"><div class="number">02</div><h3>Coordinar</h3><p>El Supervisor mira el estado completo y elige el próximo nodo; no hace el trabajo del especialista.</p></article>
-          <article class="card"><div class="number">03</div><h3>Validar</h3><p>Cada resultado entra al estado solamente después de cumplir un contrato de Pydantic.</p></article>
-          <article class="card"><div class="number">04</div><h3>Finalizar</h3><p>El flujo llega a <code>END</code> cuando existe evidencia, análisis e informe final suficientes.</p></article>
+          <article class="card"><div class="number">02</div><h3>Coordinar</h3><p>El Supervisor mira el estado y elige el próximo nodo. No hace el trabajo de los especialistas.</p></article>
+          <article class="card"><div class="number">03</div><h3>Validar</h3><p>Cada resultado entra al estado solo después de cumplir un contrato de Pydantic.</p></article>
+          <article class="card"><div class="number">04</div><h3>Finalizar</h3><p>El flujo llega a <code>END</code> cuando hay evidencia, análisis e informe suficientes, o cuando se agota el límite de pasos.</p></article>
         </div>
+        <div class="note"><p><strong>Analogía:</strong> una redacción periodística. El editor jefe (Supervisor) no escribe las notas: le pide datos al investigador, cuentas al analista y el texto final al redactor. Después de cada entrega revisa si alcanza.</p></div>
       </section>
 
       <section id="topologias">
-        <h2>2. Topologías: cómo se conectan los agentes</h2>
-        <table>
-          <thead><tr><th>Topología</th><th>Cómo funciona</th><th>Ventaja</th><th>Riesgo</th></tr></thead>
-          <tbody>
-            <tr><td>Jerárquica</td><td>Un Supervisor central decide el recorrido.</td><td>Control y trazabilidad.</td><td>El Supervisor puede ser un cuello de botella.</td></tr>
-            <tr><td>Colaborativa</td><td>Los agentes se pasan tareas entre sí.</td><td>Más autonomía.</td><td>Más difícil de predecir y depurar.</td></tr>
-            <tr><td>Secuencial</td><td>Siempre se ejecutan en un orden fijo.</td><td>Muy simple.</td><td>No se adapta al estado real.</td></tr>
-          </tbody>
-        </table>
-        <p>La pre-entrega usa una topología <strong>jerárquica</strong>: es la que mejor demuestra delegación dinámica y control de calidad.</p>
+        <h2><span class="n">02</span>Topologías: cómo se conectan los agentes</h2>
+        <p class="sub">La topología es el “organigrama” del sistema: quién puede pasarle trabajo a quién.</p>
+        <div class="grid three">
+          <article class="card">
+            <span class="tag">jerárquica</span>
+            <h3>Jerarquía</h3>
+            <div class="diagram">     Supervisor
+    ↙    ↓    ↘
+  Inv.  Anal.  Sínt.
+    ↘    ↓    ↙
+     Supervisor</div>
+            <p>Un nodo central decide el recorrido. Los especialistas nunca se llaman entre sí.</p>
+          </article>
+          <article class="card">
+            <span class="tag">colaborativa</span>
+            <h3>Colaboración</h3>
+            <div class="diagram">  Inv. ⇄ Anal.
+    ⇅  ╲  ⇅
+  Sínt. ⇄ Crít.</div>
+            <p>Los agentes se pasan la tarea entre ellos (<em>handoffs</em>) sin un jefe central.</p>
+          </article>
+          <article class="card">
+            <span class="tag">secuencial</span>
+            <h3>Secuencia</h3>
+            <div class="diagram">Inv. → Anal. → Sínt.
+            → END</div>
+            <p>Un orden fijo, como una línea de montaje. No hay decisiones de ruteo.</p>
+          </article>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Topología</th><th>¿Quién decide el próximo paso?</th><th>Ventaja</th><th>Riesgo</th><th>Cuándo conviene</th></tr></thead>
+            <tbody>
+              <tr><th>Jerarquía</th><td>El Supervisor, según el estado.</td><td>Control central, auditoría y una sola condición de parada.</td><td>El Supervisor puede ser cuello de botella.</td><td>Flujos con control de calidad y pasos que dependen de resultados.</td></tr>
+              <tr><th>Colaboración</th><td>Cada agente, al terminar.</td><td>Flexibilidad y autonomía.</td><td>Ciclos difíciles de predecir y depurar.</td><td>Tareas abiertas y exploratorias.</td></tr>
+              <tr><th>Secuencia</th><td>Nadie: el orden está fijo en el código.</td><td>Muy simple y barata.</td><td>No puede repetir ni saltear pasos.</td><td>Procesos estables donde siempre se hace lo mismo.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>La Pre-entrega 6 usa una topología <strong>jerárquica</strong>: es la que permite demostrar delegación dinámica, refinamiento (volver a pedir un trabajo) y una parada segura.</p>
       </section>
 
       <section id="supervisor">
-        <h2>3. El Patrón Supervisor</h2>
-        <p>Pensalo como el editor jefe de una redacción. Lee lo que ya existe, elige al profesional adecuado y revisa el resultado. Sus decisiones posibles están limitadas por un <code>Literal</code>.</p>
-        <div class="flow" aria-label="Flujo simplificado">
-          <div class="node">Supervisor</div><div class="arrow">→</div><div class="node">Especialista</div><div class="arrow">→</div><div class="node">Supervisor</div>
+        <h2><span class="n">03</span>El Patrón Supervisor</h2>
+        <p class="sub">El Supervisor es un nodo que solo decide. Su salida es una decisión estructurada, no texto libre.</p>
+        <div class="flow" aria-label="Ciclo del Supervisor">
+          <span class="node sup">Supervisor</span><span class="arrow">→</span><span class="node">Especialista</span><span class="arrow">→</span><span class="node sup">Supervisor</span><span class="arrow">→</span><span class="node end">… o END</span>
         </div>
-        <div class="loop"><strong>¿Por qué vuelve al Supervisor?</strong><br>Porque después de cada aporte debe comprobar si alcanza, si necesita refinamiento o si corresponde convocar a otro especialista.</div>
-        <pre><code>START → supervisor
-supervisor → researcher | analyst | synthesizer | END
-researcher → supervisor
-analyst → supervisor
-synthesizer → supervisor</code></pre>
+        <pre><code>class SupervisorDecision(BaseModel):
+    next_agent: Literal["researcher", "analyst", "synthesizer", "FINISH"]
+    reason: str = Field(min_length=10)          <span class="c"># justificación breve y auditable</span>
+    quality_feedback: str                        <span class="c"># qué corregir si se pide refinamiento</span>
+
+decision = await model.with_structured_output(SupervisorDecision).ainvoke(mensajes)</code></pre>
+        <p>Con <code>Literal</code> el modelo solo puede elegir entre cuatro valores: no existe la ruta <code>"writer"</code> ni <code>"terminar"</code>. Además, el Supervisor aplica una <strong>rúbrica</strong> (¿hay al menos dos métricas con fuente?, ¿el cálculo declara su fórmula?, ¿el informe cita fuentes?) y puede reenviar el trabajo con <code>quality_feedback</code>.</p>
+        <div class="note"><p><strong>¿Por qué todo vuelve al Supervisor?</strong> Porque después de cada aporte alguien tiene que comprobar si alcanza, si hay que refinar o si corresponde convocar al siguiente especialista. Ese “volver” es lo que convierte una secuencia en un sistema que se adapta.</p></div>
+      </section>
+
+      <section id="especializacion">
+        <h2><span class="n">04</span>Especialización de agentes</h2>
+        <p class="sub">Especializar es darle a cada agente un prompt, herramientas y contexto propios. Menos opciones significa menos errores.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Agente</th><th>Prompt</th><th>Herramientas</th><th>Contexto que recibe</th><th>No debe…</th></tr></thead>
+            <tbody>
+              <tr><th>Investigador</th><td>Buscar evidencia verificable.</td><td><code>search_market_data</code></td><td>Pedido + feedback.</td><td>Calcular porcentajes ni redactar.</td></tr>
+              <tr><th>Analista</th><td>Calcular con datos ya investigados.</td><td><code>calculate_percentage_change</code></td><td>Pedido + investigación + feedback.</td><td>Buscar fuentes nuevas.</td></tr>
+              <tr><th>Síntesis</th><td>Redactar el informe ejecutivo.</td><td>Ninguna (salida estructurada).</td><td>Pedido + investigación + análisis.</td><td>Hacer nuevas búsquedas.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Con <code>bind_tools([...], tool_choice=...)</code> cada especialista ve <em>solo</em> su herramienta: el Investigador ni siquiera sabe que existe la calculadora. Es el principio de <strong>mínimo privilegio</strong> aplicado a agentes.</p>
+        <div class="note warn"><p><strong>Sobre <code>create_react_agent</code>:</strong> en las versiones actuales de LangGraph está marcado como obsoleto. Por eso los especialistas son nodos <code>async</code> propios que usan <code>bind_tools()</code> o salida estructurada.</p></div>
+      </section>
+
+      <section id="aristas">
+        <h2><span class="n">05</span>Aristas condicionales</h2>
+        <p class="sub">Una arista normal siempre va al mismo destino. Una arista condicional elige el destino leyendo el estado.</p>
+        <pre><code>builder.add_edge(START, "supervisor")                <span class="c"># siempre empieza por el Supervisor</span>
+builder.add_conditional_edges(
+    "supervisor",
+    route_supervisor,                                 <span class="c"># función que lee el estado</span>
+    {"researcher": "researcher", "analyst": "analyst",
+     "synthesizer": "synthesizer", "FINISH": END},
+)
+for especialista in ("researcher", "analyst", "synthesizer"):
+    builder.add_edge(especialista, "supervisor")      <span class="c"># todos vuelven</span></code></pre>
+        <p>La función de ruteo no interpreta el texto del usuario: solo lee la decisión ya validada.</p>
+        <pre><code>def route_supervisor(state: AgentState) -&gt; Route:
+    if state.get("step_count", 0) &gt;= state.get("max_steps", 8):
+        return "FINISH"                               <span class="c"># freno de emergencia</span>
+    next_agent = state.get("next_agent", "FINISH")
+    return next_agent if next_agent in ROUTES else "FINISH"   <span class="c"># ruta inexistente → terminar</span></code></pre>
       </section>
 
       <section id="estado">
-        <h2>4. El estado compartido</h2>
-        <p>El estado es la memoria de trabajo del grafo. No es una variable global que todos modifican libremente: cada nodo devuelve una actualización y LangGraph la integra.</p>
-        <pre><code>class AgentState(MessagesState, total=False):
+        <h2><span class="n">06</span>El estado compartido</h2>
+        <p class="sub">El estado es la memoria de trabajo del grafo. Todos los nodos lo leen; ninguno lo modifica directamente.</p>
+        <pre><code>class AgentState(MessagesState, total=False):   <span class="c"># MessagesState aporta `messages`</span>
     request: str
-    research_output: dict | None
-    analysis_output: dict | None
-    final_report: dict | None
-    next_agent: Literal["researcher", "analyst", "synthesizer", "FINISH"]
+    research_output: dict | None                  <span class="c"># parcela del Investigador</span>
+    analysis_output: dict | None                  <span class="c"># parcela del Analista</span>
+    final_report: dict | None                     <span class="c"># parcela de Síntesis</span>
+    next_agent: Route                             <span class="c"># parcela del Supervisor</span>
+    quality_feedback: str
+    task_completed: bool
     step_count: int
-    max_steps: int</code></pre>
-        <p><strong>Aislamiento de escritura:</strong> el Investigador escribe <code>research_output</code>; el Analista escribe <code>analysis_output</code>; Síntesis escribe <code>final_report</code>. Así se reducen choques y sobrescrituras.</p>
+    max_steps: int
+    contributions: Annotated[list[dict], operator.add]   <span class="c"># acumulativa</span>
+    errors: Annotated[list[str], operator.add]           <span class="c"># acumulativa</span></code></pre>
+        <p>Cada nodo es una función que <strong>recibe el estado y devuelve un diccionario con cambios</strong>. LangGraph combina ese diccionario con el estado anterior y guarda un checkpoint (en esta entrega, en SQLite con <code>AsyncSqliteSaver</code>).</p>
+      </section>
+
+      <section id="aislamiento">
+        <h2><span class="n">07</span>Aislamiento de escritura</h2>
+        <p class="sub">Regla simple: cada campo tiene un único dueño.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Campo</th><th>Dueño</th><th>Los demás</th></tr></thead>
+            <tbody>
+              <tr><th><code>research_output</code></th><td>Investigador</td><td>Solo leen.</td></tr>
+              <tr><th><code>analysis_output</code></th><td>Analista</td><td>Solo leen.</td></tr>
+              <tr><th><code>final_report</code></th><td>Síntesis</td><td>Solo leen.</td></tr>
+              <tr><th><code>next_agent</code>, <code>step_count</code>, <code>quality_feedback</code></th><td>Supervisor</td><td>Solo leen.</td></tr>
+              <tr><th><code>contributions</code>, <code>errors</code>, <code>messages</code></th><td>Todos</td><td>Agregan elementos mediante reducers.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Así no puede pasar que el Analista “arregle” la investigación o que Síntesis cambie el porcentaje calculado. Si dos agentes escribieran el mismo campo, el último en terminar ganaría y el otro trabajo se perdería sin aviso.</p>
+      </section>
+
+      <section id="reducers">
+        <h2><span class="n">08</span>Reducers: cómo se combinan las actualizaciones</h2>
+        <p class="sub">Un reducer es la regla que dice qué hacer con el valor nuevo y el viejo.</p>
+        <div class="grid">
+          <article class="card"><h3>Sin reducer → reemplaza</h3><p><code>step_count</code>: antes <code>2</code>, el nodo devuelve <code>3</code>, queda <code>3</code>.</p></article>
+          <article class="card"><h3>Con <code>operator.add</code> → acumula</h3><p><code>errors</code>: antes <code>["A"]</code>, el nodo devuelve <code>["B"]</code>, queda <code>["A", "B"]</code>.</p></article>
+        </div>
+        <pre><code>from typing import Annotated
+import operator
+
+errors: Annotated[list[str], operator.add]     <span class="c"># el nodo devuelve SOLO lo nuevo</span>
+
+<span class="c"># Dentro de un nodo:</span>
+return {"errors": [f"Analista: {exc}"]}          <span class="c"># ✓ actualización</span>
+state["errors"].append("...")                   <span class="c"># ✗ mutación directa: no se registra bien</span></code></pre>
+        <p><code>messages</code> usa el reducer <code>add_messages</code> (viene con <code>MessagesState</code>): agrega mensajes nuevos y reemplaza los que tengan el mismo <code>id</code>.</p>
+        <div class="note warn"><p><strong>Ojo:</strong> si un nodo devuelve la lista completa en un campo con <code>operator.add</code>, los elementos se duplican. Siempre devolvé solo lo nuevo.</p></div>
       </section>
 
       <section id="async">
-        <h2>5. Por qué usamos <code>asyncio</code></h2>
-        <p>Una llamada a un LLM o a una búsqueda pasa mucho tiempo esperando la red. Con <code>async def</code> y <code>await</code>, Python puede atender otras tareas durante esa espera.</p>
+        <h2><span class="n">09</span>Por qué usamos <code>asyncio</code></h2>
+        <p class="sub">Una llamada a un LLM o a una búsqueda pasa casi todo su tiempo esperando la red.</p>
         <div class="grid">
-          <article class="card"><h3>Síncrono</h3><p>El programa queda detenido hasta recibir la respuesta.</p></article>
-          <article class="card"><h3>Asíncrono</h3><p>El event loop puede avanzar con otra operación de entrada/salida.</p></article>
+          <article class="card"><h3>Síncrono</h3><p>El programa queda detenido hasta recibir la respuesta. Nada más avanza.</p></article>
+          <article class="card"><h3>Asíncrono</h3><p>Con <code>await</code>, el <em>event loop</em> atiende otras tareas de entrada/salida mientras espera.</p></article>
         </div>
-        <p>En la demo, <code>app.astream(...)</code> permite observar cada actualización del grafo mientras ocurre.</p>
+        <pre><code>async def __call__(self, state: AgentState) -&gt; dict:
+    response = await self._model.ainvoke(mensajes)      <span class="c"># no bloquea el event loop</span>
+    raw = await search_market_data.ainvoke(args)
+
+async for update in graph.astream(estado, config, stream_mode="updates"):
+    print(update)                                       <span class="c"># cada nodo, mientras ocurre</span></code></pre>
+        <p>En Jupyter y Colab se puede usar <code>await</code> directamente en una celda. En un script se usa <code>asyncio.run(main())</code>.</p>
       </section>
 
-      <section id="validacion">
-        <h2>6. Pydantic como contrato</h2>
-        <p>El LLM puede devolver texto incompleto o un número fuera de rango. Pydantic convierte las expectativas en reglas ejecutables.</p>
-        <pre><code>class ResearchArtifact(BaseModel):
-    query: str
-    findings: list[ResearchFinding]
-    summary: str
-    confidence: float = Field(ge=0.0, le=1.0)</code></pre>
-        <p>Si <code>confidence</code> vale 1.7, el artefacto se rechaza. El error se guarda y el Supervisor puede decidir un reintento.</p>
+      <section id="pydantic">
+        <h2><span class="n">10</span>Pydantic como contrato</h2>
+        <p class="sub">El LLM puede devolver campos vacíos, un número fuera de rango o un cálculo que no cierra. Pydantic convierte esas expectativas en reglas ejecutables.</p>
+        <pre><code>class AnalysisArtifact(BaseModel):
+    start_value: float
+    end_value: float
+    result: float
+    formula: str = Field(min_length=3)
+    confidence: float = Field(ge=0.0, le=1.0)          <span class="c"># entre 0 y 1</span>
+
+    @model_validator(mode="after")
+    def _result_matches_formula(self) -&gt; Self:
+        esperado = (self.end_value - self.start_value) / self.start_value * 100
+        if abs(esperado - self.result) &gt; 0.01:
+            raise ValueError("El resultado no coincide con la fórmula.")
+        return self</code></pre>
+        <div class="grid">
+          <article class="card"><h3><span class="ok">✓</span> Entra al estado</h3><p><code>120 → 144</code>, <code>result = 20.0</code>, <code>confidence = 1.0</code></p></article>
+          <article class="card"><h3><span class="bad">✗</span> Se rechaza</h3><p><code>confidence = 1.7</code> o <code>result = 25.0</code>: el error queda en <code>errors</code> y el Supervisor decide qué hacer.</p></article>
+        </div>
+      </section>
+
+      <section id="consistencia">
+        <h2><span class="n">11</span>Consistencia del estado</h2>
+        <p class="sub">Que cada artefacto sea válido no alcanza: también tienen que ser coherentes entre sí.</p>
+        <div class="grid">
+          <article class="card"><h3>Prerrequisitos</h3><p>El Supervisor no delega en el Analista si no hay investigación, ni en Síntesis si falta el análisis. Tampoco puede elegir <code>FINISH</code> sin informe.</p></article>
+          <article class="card"><h3>Invalidación aguas abajo</h3><p>Si se rehace la investigación, el análisis y el informe anteriores se borran: estaban calculados con datos viejos.</p></article>
+          <article class="card"><h3>Anclaje a la evidencia</h3><p>El Analista solo puede usar valores que existan en la investigación, con la misma unidad. Síntesis debe citar al menos un <code>source_id</code> real.</p></article>
+          <article class="card"><h3>Hilos separados</h3><p>Cada ejecución usa su propio <code>thread_id</code>. Reusar uno continúa ese hilo y acumula sus listas en el checkpoint.</p></article>
+        </div>
       </section>
 
       <section id="entrega">
-        <h2>7. Qué hace esta pre-entrega</h2>
-        <ol class="check">
-          <li>Recibe una solicitud sobre el mercado solar.</li>
-          <li>El Supervisor llama al Investigador.</li>
-          <li>El Investigador usa una búsqueda simulada y devuelve 2023 = 120 y 2024 = 144.</li>
-          <li>El Supervisor llama al Analista.</li>
-          <li>El Analista calcula <code>((144 - 120) / 120) × 100 = 20%</code>.</li>
-          <li>El Supervisor llama a Síntesis.</li>
-          <li>Síntesis produce un informe con fuentes, recomendación y limitaciones.</li>
-          <li>El Supervisor comprueba la rúbrica y elige <code>FINISH</code>.</li>
+        <h2><span class="n">12</span>Flujo de la Pre-entrega 6</h2>
+        <p class="sub">Pedido: “Investigá el crecimiento del mercado de energía solar entre 2023 y 2024, calculá la variación porcentual y redactá una recomendación”.</p>
+        <div class="flow" aria-label="Recorrido completo">
+          <span class="node end">START</span><span class="arrow">→</span><span class="node sup">Supervisor</span><span class="arrow">→</span><span class="node">Investigador</span><span class="arrow">→</span><span class="node sup">Supervisor</span><span class="arrow">→</span><span class="node">Analista</span><span class="arrow">→</span><span class="node sup">Supervisor</span><span class="arrow">→</span><span class="node">Síntesis</span><span class="arrow">→</span><span class="node sup">Supervisor</span><span class="arrow">→</span><span class="node end">END</span>
+        </div>
+        <ol class="steps">
+          <li><b>Supervisor → researcher.</b> No hay evidencia todavía.</li>
+          <li><b>Investigador.</b> Llama a la búsqueda simulada y obtiene 2023 = 120 y 2024 = 144 millones de USD, cada uno con su <code>source_id</code>.</li>
+          <li><b>Supervisor → analyst.</b> La investigación cumple la rúbrica.</li>
+          <li><b>Analista.</b> Calcula <code>((144 − 120) / 120) × 100 = 24 / 120 × 100 = 20%</code> y guarda fórmula, valores, resultado e interpretación.</li>
+          <li><b>Supervisor → synthesizer.</b> Falta el informe.</li>
+          <li><b>Síntesis.</b> Produce título, resumen, evidencia con fuentes, recomendación y limitaciones.</li>
+          <li><b>Supervisor → FINISH.</b> El informe cumple la rúbrica: <code>task_completed = true</code>.</li>
         </ol>
-        <p>La traza JSON muestra las decisiones observables, no el razonamiento privado del modelo.</p>
+        <p>Si algo falla (timeout, rate limit, JSON inválido), el error se registra y el Supervisor aplica un ruteo defensivo. Si el problema persiste, <code>max_steps</code> corta la ejecución. La traza JSON guarda decisiones, contribuciones y artefactos; <strong>no</strong> guarda prompts ni razonamiento privado del modelo.</p>
+        <div class="note"><p><strong>Datos simulados:</strong> la búsqueda usa una base local reproducible. Sirve para evaluar la arquitectura, no para tomar decisiones de inversión.</p></div>
       </section>
 
       <section id="errores">
-        <h2>8. Errores comunes</h2>
+        <h2><span class="n">13</span>Errores comunes</h2>
         <div class="grid">
-          <article class="card warning"><h3>Supervisor infinito</h3><p>Se evita con <code>max_steps</code> y <code>recursion_limit</code>.</p></article>
-          <article class="card warning"><h3>Supervisor trabajador</h3><p>El Supervisor coordina. Investigar o calcular rompe la separación de responsabilidades.</p></article>
-          <article class="card warning"><h3>Estado mutable global</h3><p>Los nodos deben devolver actualizaciones; no compartir una lista global con <code>.append()</code>.</p></article>
-          <article class="card warning"><h3>Output sin validar</h3><p>Todo artefacto del LLM debe comprobarse antes de entrar al estado.</p></article>
-          <article class="card warning"><h3>Contexto excesivo</h3><p>Cada especialista recibe solamente la información necesaria para su tarea.</p></article>
-          <article class="card warning"><h3>Error de red sin capturar</h3><p>Timeouts y rate limits deben convertirse en errores controlados para permitir recuperación.</p></article>
+          <article class="card warning"><h3>Supervisor infinito</h3><p>Reenvía trabajo para siempre. Se evita con <code>max_steps</code> y un <code>recursion_limit</code> calculado a partir de él (2 supersteps por decisión).</p></article>
+          <article class="card warning"><h3>Finalización prematura</h3><p>Elegir <code>FINISH</code> sin informe. El Supervisor lo detecta y redirige al especialista que falta.</p></article>
+          <article class="card warning"><h3>Supervisor trabajador</h3><p>Si el Supervisor investiga o calcula, se pierde la separación de responsabilidades.</p></article>
+          <article class="card warning"><h3>Estado mutable global</h3><p>Usar <code>.append()</code> sobre listas compartidas. Los nodos deben devolver actualizaciones.</p></article>
+          <article class="card warning"><h3>Output sin validar</h3><p>Guardar en el estado lo que diga el LLM sin pasar por Pydantic.</p></article>
+          <article class="card warning"><h3>Números inventados</h3><p>Un cálculo correcto con datos que no vienen de la investigación. Hay que verificar el origen de cada valor.</p></article>
+          <article class="card warning"><h3>Contexto excesivo</h3><p>Pasarle todo el historial a cada especialista: más tokens y más confusión.</p></article>
+          <article class="card warning"><h3>Error de red sin capturar</h3><p>Timeouts y rate limits deben convertirse en errores registrados para permitir la recuperación.</p></article>
         </div>
       </section>
 
       <section id="glosario">
-        <h2>9. Glosario rápido</h2>
-        <table>
-          <tbody>
-            <tr><th>Nodo</th><td>Una función del grafo: Supervisor, Investigador, Analista o Síntesis.</td></tr>
-            <tr><th>Arista</th><td>La conexión que determina hacia dónde puede continuar el flujo.</td></tr>
-            <tr><th>Arista condicional</th><td>Una conexión cuyo destino depende del estado.</td></tr>
-            <tr><th>Estado</th><td>La información compartida y acumulada durante la ejecución.</td></tr>
-            <tr><th>Reducer</th><td>La regla usada para combinar una actualización con el estado anterior.</td></tr>
-            <tr><th>Tool</th><td>Una función externa que el agente puede solicitar con parámetros estructurados.</td></tr>
-            <tr><th>Artefacto</th><td>La salida validada y reutilizable de un especialista.</td></tr>
-            <tr><th>Rúbrica</th><td>Los criterios de calidad que usa el Supervisor para aceptar o pedir correcciones.</td></tr>
-          </tbody>
-        </table>
+        <h2><span class="n">14</span>Glosario</h2>
+        <div class="table-wrap glossary">
+          <table>
+            <tbody>
+              <tr><th>Agente</th><td>Un LLM con un rol, un prompt y (opcionalmente) herramientas.</td></tr>
+              <tr><th>Topología</th><td>La forma en que se conectan los agentes: jerarquía, colaboración o secuencia.</td></tr>
+              <tr><th>Supervisor</th><td>Nodo central que decide el próximo paso y cuándo terminar.</td></tr>
+              <tr><th>Nodo</th><td>Una función del grafo que recibe el estado y devuelve cambios.</td></tr>
+              <tr><th>Arista</th><td>La conexión entre dos nodos.</td></tr>
+              <tr><th>Arista condicional</th><td>Una conexión cuyo destino depende del estado.</td></tr>
+              <tr><th>Estado</th><td>La información compartida durante la ejecución.</td></tr>
+              <tr><th>Aislamiento de escritura</th><td>Cada campo del estado tiene un único nodo dueño.</td></tr>
+              <tr><th>Reducer</th><td>La regla que combina una actualización con el valor anterior (reemplazar, acumular…).</td></tr>
+              <tr><th>Superstep</th><td>Un paso de ejecución del grafo; <code>recursion_limit</code> cuenta supersteps.</td></tr>
+              <tr><th>Checkpointer</th><td>Componente que guarda el estado tras cada paso (aquí, SQLite).</td></tr>
+              <tr><th><code>thread_id</code></th><td>Identificador de una conversación persistida.</td></tr>
+              <tr><th>Tool</th><td>Una función que el agente puede pedir ejecutar con argumentos estructurados.</td></tr>
+              <tr><th>Artefacto</th><td>La salida validada y reutilizable de un especialista.</td></tr>
+              <tr><th>Rúbrica</th><td>Los criterios de calidad que usa el Supervisor para aceptar o pedir correcciones.</td></tr>
+              <tr><th>Refinamiento</th><td>Volver a pedirle un trabajo a un especialista con feedback concreto.</td></tr>
+              <tr><th>Traza</th><td>Registro de decisiones y contribuciones observables de una ejecución.</td></tr>
+            </tbody>
+          </table>
+        </div>
       </section>
 
-      <footer>Resumen de estudio · Pre-entrega 6 · AI Engineering</footer>
+      <footer>Resumen de estudio · Clase 6 · Pre-entrega 6 · AI Engineering — Repositorio: <a href="https://github.com/rguima-ai/langgraph-multi-agent-orchestrator">rguima-ai/langgraph-multi-agent-orchestrator</a></footer>
     </main>
   </div>
 </body>

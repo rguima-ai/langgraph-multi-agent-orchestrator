@@ -4,13 +4,13 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import Any, Literal
+from typing import Any
 
 from langchain_core.runnables import RunnableLambda
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
-from multi_agent_orchestrator.state import AgentState, Route
+from multi_agent_orchestrator.state import ROUTES, AgentState, Route
 
 Node = Callable[[AgentState], Awaitable[Any]]
 
@@ -25,14 +25,18 @@ class TeamNodes:
     synthesizer: Node
 
 
-def route_supervisor(
-    state: AgentState,
-) -> Literal["researcher", "analyst", "synthesizer", "FINISH"]:
-    """Lee la decisión estructurada; no contiene reglas sobre el texto del usuario."""
+def route_supervisor(state: AgentState) -> Route:
+    """Lee la decisión estructurada; no contiene reglas sobre el texto del usuario.
+
+    Las dos guardas protegen frente a un Supervisor defectuoso (por ejemplo, un doble de
+    prueba): una ruta desconocida o un contador agotado terminan el grafo en vez de fallar.
+    """
 
     if state.get("step_count", 0) >= state.get("max_steps", 8):
         return "FINISH"
-    next_agent: Route = state.get("next_agent", "FINISH")
+    next_agent = state.get("next_agent", "FINISH")
+    if next_agent not in ROUTES:
+        return "FINISH"
     return next_agent
 
 

@@ -1,30 +1,92 @@
 {
   "thread_id": "multi-agent-demo-001",
-  "note": "Ejemplo auditable. La ejecución real genera traces/latest_trace.json.",
+  "mode": "offline",
+  "generated_at": "2026-10-14T18:57:47.890243+00:00",
+  "event_count": 7,
   "events": [
     {
       "position": 1,
       "node": "supervisor",
+      "step_count": 1,
       "next_agent": "researcher",
-      "supervisor_reason": "Falta evidencia con valores, períodos y fuentes."
+      "supervisor_reason": "Falta evidencia con valores, períodos, unidades y fuentes.",
+      "quality_feedback": "",
+      "task_completed": false,
+      "contributions": [
+        {
+          "agent": "supervisor",
+          "status": "decision",
+          "next_agent": "researcher",
+          "summary": "Falta evidencia con valores, períodos, unidades y fuentes."
+        }
+      ],
+      "errors": []
     },
     {
       "position": 2,
       "node": "researcher",
+      "research_output": {
+        "query": "tamaño del mercado de energía solar 2023 2024",
+        "findings": [
+          {
+            "label": "Tamaño del mercado solar",
+            "value": 144.0,
+            "unit": "millones de USD",
+            "period": "2024",
+            "source_id": "market-report-2024",
+            "note": "Estimación consolidada del mercado simulado para 2024."
+          },
+          {
+            "label": "Tamaño del mercado solar",
+            "value": 120.0,
+            "unit": "millones de USD",
+            "period": "2023",
+            "source_id": "market-report-2023",
+            "note": "Estimación consolidada del mercado simulado para 2023."
+          },
+          {
+            "label": "Reducción del costo de instalación",
+            "value": 8.0,
+            "unit": "porcentaje",
+            "period": "2024",
+            "source_id": "solar-cost-index-2024",
+            "note": "Variación interanual simulada del costo promedio de instalación."
+          }
+        ],
+        "summary": "Se recuperaron 3 métricas con fuente identificada.",
+        "confidence": 0.9
+      },
       "contributions": [
         {
           "agent": "researcher",
           "status": "success",
-          "summary": "Se recuperaron métricas de 2023 y 2024.",
-          "source_ids": ["market-report-2023", "market-report-2024"]
+          "summary": "Investigación validada: 3 hallazgos, confianza 90%.",
+          "source_ids": [
+            "market-report-2024",
+            "market-report-2023",
+            "solar-cost-index-2024"
+          ]
         }
-      ]
+      ],
+      "errors": []
     },
     {
       "position": 3,
       "node": "supervisor",
+      "step_count": 2,
       "next_agent": "analyst",
-      "supervisor_reason": "La evidencia es suficiente; falta calcular la variación."
+      "supervisor_reason": "La evidencia cumple la rúbrica; falta calcular la variación.",
+      "quality_feedback": "",
+      "task_completed": false,
+      "contributions": [
+        {
+          "agent": "supervisor",
+          "status": "decision",
+          "next_agent": "analyst",
+          "summary": "La evidencia cumple la rúbrica; falta calcular la variación."
+        }
+      ],
+      "errors": []
     },
     {
       "position": 4,
@@ -35,32 +97,87 @@
         "end_value": 144.0,
         "result": 20.0,
         "formula": "((valor_final - valor_inicial) / valor_inicial) * 100",
-        "interpretation": "El indicador aumentó 20% entre 2023 y 2024.",
+        "interpretation": "El indicador cambió +20.00% entre 2023 y 2024.",
         "confidence": 1.0
-      }
+      },
+      "contributions": [
+        {
+          "agent": "analyst",
+          "status": "success",
+          "summary": "Análisis validado: Variación porcentual 2023-2024; resultado +20.00%.",
+          "source_ids": [
+            "market-report-2023",
+            "market-report-2024"
+          ]
+        }
+      ],
+      "errors": []
     },
     {
       "position": 5,
       "node": "supervisor",
+      "step_count": 3,
       "next_agent": "synthesizer",
-      "supervisor_reason": "Investigación y análisis cumplen la rúbrica; falta el informe."
+      "supervisor_reason": "Investigación y análisis cumplen la rúbrica; falta el informe.",
+      "quality_feedback": "",
+      "task_completed": false,
+      "contributions": [
+        {
+          "agent": "supervisor",
+          "status": "decision",
+          "next_agent": "synthesizer",
+          "summary": "Investigación y análisis cumplen la rúbrica; falta el informe."
+        }
+      ],
+      "errors": []
     },
     {
       "position": 6,
       "node": "synthesizer",
       "final_report": {
-        "title": "Crecimiento del mercado solar",
-        "executive_summary": "La base simulada muestra un crecimiento del 20% entre 2023 y 2024.",
-        "evidence": ["market-report-2023", "market-report-2024"],
-        "recommendation": "Profundizar el análisis con fuentes reales antes de decidir una inversión.",
-        "limitations": ["Las cifras de esta demostración son simuladas."]
-      }
+        "title": "Crecimiento del mercado solar 2023-2024",
+        "executive_summary": "Según la base simulada, el mercado pasó de 120 a 144 millones de USD: una variación de +20.00%.",
+        "evidence": [
+          "Tamaño del mercado solar 2023: 120 millones de USD [market-report-2023]",
+          "Tamaño del mercado solar 2024: 144 millones de USD [market-report-2024]",
+          "Cálculo: ((valor_final - valor_inicial) / valor_inicial) * 100 = 20.00%"
+        ],
+        "recommendation": "Considerar el segmento solar como prioritario y validar la tendencia con fuentes de mercado reales antes de comprometer inversión.",
+        "limitations": [
+          "Las cifras provienen de una base de conocimiento simulada.",
+          "Dos puntos anuales no alcanzan para proyectar una tendencia."
+        ]
+      },
+      "contributions": [
+        {
+          "agent": "synthesizer",
+          "status": "success",
+          "summary": "Informe final validado: Crecimiento del mercado solar 2023-2024",
+          "source_ids": [
+            "market-report-2023",
+            "market-report-2024"
+          ]
+        }
+      ],
+      "errors": []
     },
     {
       "position": 7,
       "node": "supervisor",
+      "step_count": 4,
       "next_agent": "FINISH",
-      "supervisor_reason": "El informe cumple la rúbrica y la tarea está completa."
+      "supervisor_reason": "El informe final cumple la rúbrica y la tarea está completa.",
+      "quality_feedback": "",
+      "task_completed": true,
+      "contributions": [
+        {
+          "agent": "supervisor",
+          "status": "decision",
+          "next_agent": "FINISH",
+          "summary": "El informe final cumple la rúbrica y la tarea está completa."
+        }
+      ],
+      "errors": []
     }
   ]
 }

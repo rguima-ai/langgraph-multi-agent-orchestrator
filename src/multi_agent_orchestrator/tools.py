@@ -194,5 +194,21 @@ async def calculate_percentage_change(
     return artifact.model_dump_json()
 
 
+def raise_if_tool_error(raw_result: str) -> None:
+    """Convierte un error controlado de herramienta en ValueError legible para el agente.
+
+    Las herramientas nunca lanzan excepciones al LLM: devuelven `{"status": ...}`. El agente
+    usa esta función para no confundir ese aviso con un artefacto y registrar un error claro.
+    """
+
+    try:
+        payload = json.loads(raw_result)
+    except json.JSONDecodeError as exc:
+        raise ValueError("La herramienta devolvió un resultado que no es JSON.") from exc
+    if isinstance(payload, dict) and payload.get("status") in {"error", "not_found"}:
+        detail = payload.get("error_type", payload["status"])
+        raise ValueError(f"Herramienta sin resultado válido ({detail}): {payload['message']}")
+
+
 RESEARCH_TOOLS = [search_market_data]
 ANALYSIS_TOOLS = [calculate_percentage_change]

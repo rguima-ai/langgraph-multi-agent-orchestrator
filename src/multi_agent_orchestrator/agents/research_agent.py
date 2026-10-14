@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
@@ -9,7 +10,11 @@ from pydantic import ValidationError
 
 from multi_agent_orchestrator.errors import RECOVERABLE_LLM_ERRORS
 from multi_agent_orchestrator.state import AgentState, ResearchArtifact
-from multi_agent_orchestrator.tools import RESEARCH_TOOLS, search_market_data
+from multi_agent_orchestrator.tools import (
+    RESEARCH_TOOLS,
+    raise_if_tool_error,
+    search_market_data,
+)
 
 RESEARCH_PROMPT = SystemMessage(
     content=(
@@ -30,15 +35,14 @@ class ResearchAgent:
         )
 
     async def __call__(self, state: AgentState) -> dict[str, Any]:
-        feedback = state.get("quality_feedback", "")
-        instruction = (
-            f"Solicitud del usuario: {state['request']}\n"
-            f"Feedback del Supervisor: {feedback or 'Sin observaciones previas.'}"
-        )
-
         try:
+            # Contexto mínimo: el pedido y el feedback; no ve análisis ni informe.
+            payload = {
+                "request": state["request"],
+                "supervisor_feedback": state.get("quality_feedback", ""),
+            }
             response = await self._model.ainvoke(
-                [RESEARCH_PROMPT, HumanMessage(content=instruction)]
+                [RESEARCH_PROMPT, HumanMessage(content=json.dumps(payload, ensure_ascii=False))]
             )
             if not response.tool_calls:
                 raise ValueError(
@@ -47,6 +51,7 @@ class ResearchAgent:
 
             tool_call = response.tool_calls[0]
             raw_result = await search_market_data.ainvoke(tool_call["args"])
+            raise_if_tool_error(raw_result)
             artifact = ResearchArtifact.model_validate_json(raw_result)
             summary = (
                 f"Investigación validada: {len(artifact.findings)} hallazgos, "

@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping
 from typing import Any
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
-from pydantic import ValidationError
 
 from multi_agent_orchestrator.errors import RECOVERABLE_LLM_ERRORS
 from multi_agent_orchestrator.state import AgentState, Route, SupervisorDecision
@@ -24,6 +24,38 @@ SUPERVISOR_PROMPT = SystemMessage(
     )
 )
 
+# Qué artefactos debe tener el estado antes de delegar en cada especialista.
+PREREQUISITES: dict[Route, tuple[str, ...]] = {
+    "researcher": (),
+    "analyst": ("research_output",),
+    "synthesizer": ("research_output", "analysis_output"),
+    "FINISH": ("research_output", "analysis_output", "final_report"),
+}
+
+# Artefactos que quedan desactualizados si se rehace una etapa anterior.
+DOWNSTREAM: dict[Route, tuple[str, ...]] = {
+    "researcher": ("analysis_output", "final_report"),
+    "analyst": ("final_report",),
+    "synthesizer": (),
+    "FINISH": (),
+}
+
+
+def first_missing_route(state: Mapping[str, Any]) -> Route:
+    """Ruteo determinista: la primera etapa cuyo artefacto todavía no existe."""
+
+    if not state.get("research_output"):
+        return "researcher"
+    if not state.get("analysis_output"):
+        return "analyst"
+    if not state.get("final_report"):
+        return "synthesizer"
+    return "FINISH"
+
+
+def _missing_prerequisites(state: AgentState, route: Route) -> list[str]:
+    return [field for field in PREREQUISITES[route] if not state.get(field)]
+
 
 class SupervisorNode:
     """Nodo de ruteo mediante salida estructurada y una condición de parada defensiva."""
@@ -35,15 +67,9 @@ class SupervisorNode:
         current_step = state.get("step_count", 0)
         max_steps = state.get("max_steps", 8)
         if current_step >= max_steps:
-            reason = f"Se alcanzó el límite defensivo de {max_steps} decisiones del Supervisor."
-            return {
-                "next_agent": "FINISH",
-                "supervisor_reason": reason,
-                "task_completed": bool(state.get("final_report")),
-                "errors": [reason],
-                "messages": [AIMessage(content=reason, name="supervisor")],
-            }
+            return self._stop_at_limit(state, current_step, max_steps)
 
+        errors: list[str] = []
         snapshot = {
             "request": state["request"],
             "research_output": state.get("research_output"),
@@ -61,40 +87,47 @@ class SupervisorNode:
                 ]
             )
             validated = SupervisorDecision.model_validate(decision)
-        except (ValidationError, *RECOVERABLE_LLM_ERRORS) as exc:
-            fallback_route: Route
-            if not state.get("research_output"):
-                fallback_route = "researcher"
-            elif not state.get("analysis_output"):
-                fallback_route = "analyst"
-            elif not state.get("final_report"):
-                fallback_route = "synthesizer"
-            else:
-                fallback_route = "FINISH"
-
-            error = f"Supervisor: {type(exc).__name__}: {exc}"
+        except (ValueError, *RECOVERABLE_LLM_ERRORS) as exc:
+            # ValueError cubre ValidationError de Pydantic y OutputParserException de LangChain.
+            errors.append(f"Supervisor: {type(exc).__name__}: {exc}")
             validated = SupervisorDecision(
-                next_agent=fallback_route,
+                next_agent=first_missing_route(state),
                 reason="Se aplicó el ruteo defensivo porque falló la decisión del LLM.",
                 quality_feedback="Reintentá la tarea respetando el contrato de salida.",
             )
-            snapshot["recoverable_error"] = error
 
-        if validated.next_agent == "FINISH" and not state.get("final_report"):
+        missing = _missing_prerequisites(state, validated.next_agent)
+        if missing:
+            # Evita delegar en un especialista sin insumos o terminar sin informe.
+            safe_route = first_missing_route(state)
+            errors.append(
+                f"Supervisor: '{validated.next_agent}' requiere {', '.join(missing)}; "
+                f"se delega en '{safe_route}'."
+            )
             validated = SupervisorDecision(
-                next_agent="synthesizer",
-                reason="No existe un informe final; debe intervenir Síntesis antes de terminar.",
-                quality_feedback="Completá el informe usando la evidencia y el análisis validados.",
+                next_agent=safe_route,
+                reason=f"Faltan artefactos previos ({', '.join(missing)}).",
+                quality_feedback=validated.quality_feedback,
             )
 
-        message = f"Próximo agente: {validated.next_agent}. Motivo: {validated.reason}"
+        new_step = current_step + 1
+        if new_step >= max_steps and validated.next_agent != "FINISH":
+            # La última decisión permitida no puede abrir otra vuelta: se corta acá,
+            # dejando constancia, en lugar de que el router la ignore en silencio.
+            return self._stop_at_limit(state, new_step, max_steps, errors)
+
         update: dict[str, Any] = {
             "next_agent": validated.next_agent,
             "supervisor_reason": validated.reason,
             "quality_feedback": validated.quality_feedback,
             "task_completed": validated.next_agent == "FINISH",
-            "step_count": current_step + 1,
-            "messages": [AIMessage(content=message, name="supervisor")],
+            "step_count": new_step,
+            "messages": [
+                AIMessage(
+                    content=f"Próximo agente: {validated.next_agent}. Motivo: {validated.reason}",
+                    name="supervisor",
+                )
+            ],
             "contributions": [
                 {
                     "agent": "supervisor",
@@ -104,6 +137,38 @@ class SupervisorNode:
                 }
             ],
         }
-        if "recoverable_error" in snapshot:
-            update["errors"] = [snapshot["recoverable_error"]]
+        # Rehacer una etapa invalida lo que dependía de ella (consistencia del estado).
+        for field in DOWNSTREAM[validated.next_agent]:
+            if state.get(field):
+                update[field] = None
+        if errors:
+            update["errors"] = errors
         return update
+
+    @staticmethod
+    def _stop_at_limit(
+        state: AgentState,
+        step: int,
+        max_steps: int,
+        errors: list[str] | None = None,
+    ) -> dict[str, Any]:
+        reason = f"Se alcanzó el límite defensivo de {max_steps} decisiones del Supervisor."
+        return {
+            "next_agent": "FINISH",
+            "supervisor_reason": reason,
+            "quality_feedback": "",
+            # Cortar por límite no es completar la tarea, aunque exista un borrador.
+            "task_completed": False,
+            "step_count": step,
+            "errors": [*(errors or []), reason],
+            "messages": [AIMessage(content=reason, name="supervisor")],
+            "contributions": [
+                {
+                    "agent": "supervisor",
+                    "status": "step_limit",
+                    "next_agent": "FINISH",
+                    "summary": reason,
+                    "had_final_report": bool(state.get("final_report")),
+                }
+            ],
+        }

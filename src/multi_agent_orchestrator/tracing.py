@@ -9,6 +9,20 @@ from typing import Any
 
 from langchain_core.messages import BaseMessage
 
+# Campos estructurados que se copian a la traza; `messages` queda afuera a propósito.
+TRACED_FIELDS = (
+    "step_count",
+    "next_agent",
+    "supervisor_reason",
+    "quality_feedback",
+    "task_completed",
+    "research_output",
+    "analysis_output",
+    "final_report",
+    "contributions",
+    "errors",
+)
+
 
 def _json_safe(value: Any) -> Any:
     if isinstance(value, BaseMessage):
@@ -27,31 +41,35 @@ def _json_safe(value: Any) -> Any:
 
 
 def update_to_event(position: int, node: str, update: dict[str, Any]) -> dict[str, Any]:
-    """Conserva decisiones, artefactos y errores observables."""
+    """Conserva decisiones, artefactos y errores observables.
 
-    return {
-        "position": position,
-        "node": node,
-        "next_agent": update.get("next_agent"),
-        "supervisor_reason": update.get("supervisor_reason"),
-        "research_output": _json_safe(update.get("research_output")),
-        "analysis_output": _json_safe(update.get("analysis_output")),
-        "final_report": _json_safe(update.get("final_report")),
-        "contributions": _json_safe(update.get("contributions", [])),
-        "errors": _json_safe(update.get("errors", [])),
-    }
+    Por diseño no copia `messages` ni prompts: solo campos estructurados del estado. El
+    `supervisor_reason` es la justificación breve que el contrato pide de forma explícita,
+    no el razonamiento interno del modelo.
+    """
+
+    event: dict[str, Any] = {"position": position, "node": node}
+    for field in TRACED_FIELDS:
+        if field in update:
+            event[field] = _json_safe(update[field])
+    event.setdefault("contributions", [])
+    event.setdefault("errors", [])
+    return event
 
 
 def save_trace(
     events: list[dict[str, Any]],
     output_path: Path,
     thread_id: str,
+    *,
+    mode: str = "openai",
 ) -> None:
     """Escribe la traza en UTF-8 sin incluir prompts internos ni secretos."""
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "thread_id": thread_id,
+        "mode": mode,
         "generated_at": datetime.now(UTC).isoformat(),
         "event_count": len(events),
         "events": events,
@@ -67,7 +85,7 @@ def print_event(event: dict[str, Any]) -> None:
 
     node = event["node"]
     if node == "supervisor":
-        print(f"[SUPERVISOR] -> {event['next_agent']}: {event['supervisor_reason']}")
+        print(f"[SUPERVISOR] -> {event.get('next_agent')}: {event.get('supervisor_reason')}")
     elif event["errors"]:
         print(f"[{node.upper()}] ERROR: {event['errors'][-1]}")
     else:

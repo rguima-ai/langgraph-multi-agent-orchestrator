@@ -25,6 +25,16 @@ SYNTHESIS_PROMPT = SystemMessage(
 )
 
 
+def _cited_source_ids(research: ResearchArtifact, report: FinalReport) -> list[str]:
+    """Exige que el informe cite al menos una fuente real de la investigación."""
+
+    text = " ".join([*report.evidence, report.executive_summary, report.recommendation])
+    cited = sorted({f.source_id for f in research.findings if f.source_id in text})
+    if not cited:
+        raise ValueError("El informe no cita ningún source_id de la investigación.")
+    return cited
+
+
 class SynthesisAgent:
     """Nodo async que produce un `FinalReport` validado con Pydantic."""
 
@@ -48,6 +58,7 @@ class SynthesisAgent:
                 ]
             )
             validated = FinalReport.model_validate(report)
+            cited = _cited_source_ids(research, validated)
             summary = f"Informe final validado: {validated.title}"
             return {
                 "final_report": validated.model_dump(mode="json"),
@@ -59,6 +70,7 @@ class SynthesisAgent:
                         "agent": "synthesizer",
                         "status": "success",
                         "summary": summary,
+                        "source_ids": cited,
                     }
                 ],
             }

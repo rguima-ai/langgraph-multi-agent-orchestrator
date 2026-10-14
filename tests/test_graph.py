@@ -1,177 +1,126 @@
-"""Pruebas del ruteo jerárquico, refinamiento y condición de parada."""
+"""Grafo: delegación completa, refinamiento, condición de parada y persistencia."""
 
+from __future__ import annotations
+
+from pathlib import Path
 from typing import Any
 
 import pytest
-from langchain_core.messages import AIMessage, HumanMessage
+from conftest import analysis_output, final_report, make_state, research_output
+from langchain_core.messages import AIMessage
+from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
-from multi_agent_orchestrator.graph import TeamNodes, build_graph
+from multi_agent_orchestrator.graph import TeamNodes, build_graph, route_supervisor
+from multi_agent_orchestrator.main import build_team
+from multi_agent_orchestrator.offline import OfflineDemoModel
 from multi_agent_orchestrator.state import AgentState
-from multi_agent_orchestrator.supervisor import SupervisorNode
+from multi_agent_orchestrator.supervisor import first_missing_route
 
-
-def _initial_state(max_steps: int = 8) -> AgentState:
-    return {
-        "messages": [HumanMessage(content="Analizá el mercado solar")],
-        "request": "Analizá el mercado solar",
-        "research_output": None,
-        "analysis_output": None,
-        "final_report": None,
-        "task_completed": False,
-        "step_count": 0,
-        "max_steps": max_steps,
-        "contributions": [],
-        "errors": [],
-    }
+EXPECTED_FLOW = [
+    "supervisor",
+    "researcher",
+    "supervisor",
+    "analyst",
+    "supervisor",
+    "synthesizer",
+    "supervisor",
+]
 
 
 @pytest.mark.asyncio
-async def test_supervisor_refines_then_delegates_and_finishes() -> None:
+async def test_supervisor_refines_insufficient_research_before_delegating() -> None:
     research_attempts = 0
 
     async def supervisor(state: AgentState) -> dict[str, Any]:
-        step = state.get("step_count", 0) + 1
         research = state.get("research_output")
-        if not research or research["confidence"] < 0.6:
-            route = "researcher"
-        elif not state.get("analysis_output"):
-            route = "analyst"
-        elif not state.get("final_report"):
-            route = "synthesizer"
+        if research and research["confidence"] < 0.6:
+            route, feedback = "researcher", "Confianza insuficiente: reforzá la evidencia."
         else:
-            route = "FINISH"
+            route, feedback = first_missing_route(state), ""
         return {
             "next_agent": route,
-            "step_count": step,
+            "quality_feedback": feedback,
+            "step_count": state.get("step_count", 0) + 1,
             "task_completed": route == "FINISH",
-            "contributions": [
-                {"agent": "supervisor", "status": "decision", "next_agent": route}
-            ],
+            "contributions": [{"agent": "supervisor", "next_agent": route}],
         }
 
     async def researcher(state: AgentState) -> dict[str, Any]:
-        del state
         nonlocal research_attempts
         research_attempts += 1
+        if research_attempts == 2:
+            assert "reforzá" in state.get("quality_feedback", "")
         confidence = 0.4 if research_attempts == 1 else 0.9
         return {
-            "research_output": {
-                "query": "mercado solar",
-                "findings": [
-                    {
-                        "label": "Mercado",
-                        "value": 120,
-                        "unit": "USD",
-                        "period": "2023",
-                        "source_id": "source-2023",
-                        "note": "",
-                    }
-                ],
-                "summary": "Investigación simulada para probar refinamiento.",
-                "confidence": confidence,
-            },
+            "research_output": research_output(confidence),
             "messages": [AIMessage(content="Investigación", name="researcher")],
-            "contributions": [
-                {"agent": "researcher", "status": "success", "confidence": confidence}
-            ],
+            "contributions": [{"agent": "researcher", "confidence": confidence}],
         }
 
     async def analyst(state: AgentState) -> dict[str, Any]:
         del state
-        return {
-            "analysis_output": {
-                "metric": "Variación",
-                "start_value": 120,
-                "end_value": 144,
-                "result": 20,
-                "formula": "(144 - 120) / 120 * 100",
-                "interpretation": "El mercado aumentó veinte por ciento.",
-                "confidence": 1.0,
-            },
-            "contributions": [{"agent": "analyst", "status": "success"}],
-        }
+        return {"analysis_output": analysis_output(), "contributions": [{"agent": "analyst"}]}
 
     async def synthesizer(state: AgentState) -> dict[str, Any]:
         del state
-        return {
-            "final_report": {
-                "title": "Informe del mercado solar",
-                "executive_summary": (
-                    "El mercado simulado creció y presenta una señal positiva para inversión."
-                ),
-                "evidence": ["source-2023", "source-2024"],
-                "recommendation": "Continuar el análisis con fuentes reales antes de invertir.",
-                "limitations": ["Los datos utilizados son simulados."],
-            },
-            "contributions": [{"agent": "synthesizer", "status": "success"}],
-        }
+        return {"final_report": final_report(), "contributions": [{"agent": "synthesizer"}]}
 
-    graph = build_graph(
-        TeamNodes(
-            supervisor=supervisor,
-            researcher=researcher,
-            analyst=analyst,
-            synthesizer=synthesizer,
-        )
-    )
-    result = await graph.ainvoke(_initial_state(), config={"recursion_limit": 24})
+    graph = build_graph(TeamNodes(supervisor, researcher, analyst, synthesizer))
+    result = await graph.ainvoke(make_state(), config={"recursion_limit": 24})
     agents = [item["agent"] for item in result["contributions"]]
 
     assert research_attempts == 2
-    assert agents == [
-        "supervisor",
-        "researcher",
-        "supervisor",
-        "researcher",
-        "supervisor",
-        "analyst",
-        "supervisor",
-        "synthesizer",
-        "supervisor",
-    ]
+    assert agents == ["supervisor", "researcher", *EXPECTED_FLOW]
     assert result["task_completed"] is True
-    assert result["final_report"]["title"] == "Informe del mercado solar"
 
 
 @pytest.mark.asyncio
-async def test_graph_stops_at_max_supervisor_steps() -> None:
+async def test_graph_stops_a_supervisor_that_delegates_forever() -> None:
     async def endless_supervisor(state: AgentState) -> dict[str, Any]:
-        return {
-            "next_agent": "researcher",
-            "step_count": state.get("step_count", 0) + 1,
-        }
+        return {"next_agent": "researcher", "step_count": state.get("step_count", 0) + 1}
 
     async def empty_worker(state: AgentState) -> dict[str, Any]:
         del state
         return {}
 
     graph = build_graph(
-        TeamNodes(
-            supervisor=endless_supervisor,
-            researcher=empty_worker,
-            analyst=empty_worker,
-            synthesizer=empty_worker,
-        )
+        TeamNodes(endless_supervisor, empty_worker, empty_worker, empty_worker)
     )
-    result = await graph.ainvoke(_initial_state(max_steps=3), config={"recursion_limit": 24})
+    result = await graph.ainvoke(make_state(max_steps=3), config={"recursion_limit": 24})
 
     assert result["step_count"] == 3
     assert result["task_completed"] is False
 
 
+def test_router_maps_unknown_route_to_finish() -> None:
+    assert route_supervisor(make_state(next_agent="writer")) == "FINISH"
+    assert route_supervisor(make_state(next_agent="analyst")) == "analyst"
+    assert route_supervisor(make_state(next_agent="analyst", step_count=8)) == "FINISH"
+
+
 @pytest.mark.asyncio
-async def test_supervisor_uses_safe_route_after_recoverable_llm_error() -> None:
-    class TimeoutModel:
-        def with_structured_output(self, schema: Any) -> "TimeoutModel":
-            del schema
-            return self
+async def test_real_nodes_visit_every_specialist_and_persist_in_sqlite(tmp_path: Path) -> None:
+    db_path = tmp_path / "nested" / "checkpoints.sqlite"
+    db_path.parent.mkdir(parents=True)
+    config: Any = {"configurable": {"thread_id": "test-thread"}, "recursion_limit": 18}
 
-        async def ainvoke(self, messages: Any) -> Any:
-            del messages
-            raise TimeoutError("simulated timeout")
+    async with AsyncSqliteSaver.from_conn_string(str(db_path)) as checkpointer:
+        graph = build_graph(build_team(OfflineDemoModel()), checkpointer=checkpointer)
+        visited = [
+            node
+            async for update in graph.astream(make_state(), config=config, stream_mode="updates")
+            for node in update
+        ]
 
-    update = await SupervisorNode(TimeoutModel())(_initial_state())
+    assert visited == EXPECTED_FLOW
 
-    assert update["next_agent"] == "researcher"
-    assert update["step_count"] == 1
-    assert "TimeoutError" in update["errors"][0]
+    # Un checkpointer nuevo sobre el mismo archivo recupera el hilo: la persistencia es real.
+    async with AsyncSqliteSaver.from_conn_string(str(db_path)) as checkpointer:
+        graph = build_graph(build_team(OfflineDemoModel()), checkpointer=checkpointer)
+        snapshot = await graph.aget_state(config)
+
+    state = snapshot.values
+    assert state["task_completed"] is True
+    assert state["analysis_output"]["result"] == 20.0
+    assert state["errors"] == []
+    assert [c["agent"] for c in state["contributions"]] == EXPECTED_FLOW

@@ -13,3 +13,9 @@ data/*.sqlite-wal
 traces/latest_trace.json
 .ipynb_checkpoints/
 .DS_Store
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.db
+.env.*
+!.env.example

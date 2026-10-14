@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import operator
-from typing import Annotated, Any, Literal, NotRequired
+from typing import Annotated, Any, Literal, NotRequired, Self, get_args
 
 from langgraph.graph import MessagesState
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 Route = Literal["researcher", "analyst", "synthesizer", "FINISH"]
+ROUTES: tuple[Route, ...] = get_args(Route)
 
 
 class ResearchFinding(BaseModel):
@@ -30,6 +31,13 @@ class ResearchArtifact(BaseModel):
     summary: str = Field(min_length=10)
     confidence: float = Field(ge=0.0, le=1.0)
 
+    @model_validator(mode="after")
+    def _unique_sources_per_period(self) -> Self:
+        keys = [(item.source_id, item.period, item.label) for item in self.findings]
+        if len(keys) != len(set(keys)):
+            raise ValueError("La investigación contiene hallazgos duplicados.")
+        return self
+
 
 class AnalysisArtifact(BaseModel):
     """Salida validada que pertenece exclusivamente al Analista."""
@@ -41,6 +49,19 @@ class AnalysisArtifact(BaseModel):
     formula: str = Field(min_length=3)
     interpretation: str = Field(min_length=10)
     confidence: float = Field(ge=0.0, le=1.0)
+
+    @model_validator(mode="after")
+    def _result_matches_formula(self) -> Self:
+        """Impide que entre al estado un porcentaje que no surge de los valores declarados."""
+
+        if self.start_value == 0:
+            raise ValueError("El valor inicial no puede ser cero.")
+        expected = (self.end_value - self.start_value) / self.start_value * 100
+        if abs(expected - self.result) > 0.01:
+            raise ValueError(
+                f"El resultado {self.result} no coincide con la fórmula ({expected:.2f})."
+            )
+        return self
 
 
 class FinalReport(BaseModel):
@@ -58,7 +79,11 @@ class SupervisorDecision(BaseModel):
 
     next_agent: Route
     reason: str = Field(min_length=10)
-    quality_feedback: str = ""
+    # Sin valor por defecto: el modo estricto de OpenAI exige que todos los campos sean
+    # obligatorios. Si no hay correcciones, el modelo devuelve una cadena vacía.
+    quality_feedback: str = Field(
+        description="Corrección concreta para el próximo especialista, o cadena vacía."
+    )
 
 
 class AgentState(MessagesState, total=False):

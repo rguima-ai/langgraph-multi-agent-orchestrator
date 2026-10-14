@@ -5,10 +5,13 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import httpx2
 import pytest
+from openai import AuthenticationError
 
 from multi_agent_orchestrator import main as main_module
 from multi_agent_orchestrator.config import Settings
+from multi_agent_orchestrator.state import AgentState
 
 
 @pytest.fixture
@@ -81,3 +84,30 @@ def test_run_without_api_key_exits_with_configuration_error(isolated_env: Path) 
         main_module.run([])
 
     assert exit_info.value.code == 1
+
+
+def test_invalid_api_key_exits_cleanly_without_exposing_it(
+    isolated_env: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    del isolated_env
+    monkeypatch.setenv("OPENAI_API_KEY", "k-proj-test-invalid-value")
+    request = httpx2.Request("POST", "https://api.openai.com/v1/chat/completions")
+    error = AuthenticationError(
+        "invalid_api_key",
+        response=httpx2.Response(401, request=request),
+        body=None,
+    )
+
+    async def rejected(*args: object, **kwargs: object) -> AgentState:
+        raise error
+
+    monkeypatch.setattr(main_module, "run_demo", rejected)
+    with pytest.raises(SystemExit) as exit_info:
+        main_module.run([])
+
+    output = capsys.readouterr().out
+    assert exit_info.value.code == 1
+    assert "rechazó la API key" in output
+    assert "k-proj-test-invalid-value" not in output

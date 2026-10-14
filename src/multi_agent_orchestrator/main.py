@@ -11,6 +11,7 @@ from langchain_core.messages import HumanMessage
 from langchain_core.runnables import RunnableConfig
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
+from openai import AuthenticationError, PermissionDeniedError
 from pydantic import ValidationError
 
 from multi_agent_orchestrator.agents import AnalystAgent, ResearchAgent, SynthesisAgent
@@ -150,6 +151,13 @@ def run(argv: list[str] | None = None) -> None:
         completed = asyncio.run(main(offline=args.offline))
     except RuntimeError as exc:
         print(f"Error de configuración: {exc}")
+        raise SystemExit(1) from exc
+    except (AuthenticationError, PermissionDeniedError) as exc:
+        # No es recuperable dentro del grafo: se informa sin traceback y sin la clave.
+        print(
+            "Error de configuración: OpenAI rechazó la API key "
+            f"({type(exc).__name__}). Revisá OPENAI_API_KEY en .env: debe empezar con 'sk-'."
+        )
         raise SystemExit(1) from exc
     if not completed:
         raise SystemExit(2)

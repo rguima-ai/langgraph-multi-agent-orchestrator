@@ -146,7 +146,7 @@ Supervisor decide qué hacer.
 | `FINISH` sin informe | Supervisor | Se redirige a la etapa que falta. |
 | Timeout de la búsqueda | Herramienta | Devuelve `{"status": "error"}`; el Investigador registra el error. |
 | División por cero | Herramienta | Devuelve `{"status": "error", "error_type": "ZeroDivisionError"}`. |
-| API key inválida (`AuthenticationError`) | — | **No** se captura a propósito: reintentar no sirve. |
+| API key inválida (`AuthenticationError`) | `main` | No se reintenta (no tiene sentido): se muestra un mensaje claro, sin traceback ni la clave, y sale con código 1. |
 
 ## Herramientas
 
@@ -179,7 +179,7 @@ Definidas con `@tool`, argumentos validados con esquemas Pydantic y asíncronas:
 │   ├── supervisor.py             # Supervisor, rúbrica y guardas
 │   ├── tools.py                  # Herramientas
 │   └── tracing.py                # Traza auditable
-├── tests/                        # 47 pruebas, sin red ni tokens
+├── tests/                        # 48 pruebas, sin red ni tokens
 ├── notebooks/demo_delegacion.ipynb
 ├── docs/resumen_modulo_6.html    # Resumen de la clase 6
 ├── traces/example_trace.json     # Traza de ejemplo
@@ -342,13 +342,18 @@ Cubren, entre otras cosas:
 ## Limitaciones del prototipo
 
 - Los datos de mercado son **simulados**; la búsqueda es léxica sobre cuatro documentos.
-- La demo offline no prueba la calidad de las decisiones de un LLM real: prueba la arquitectura.
-  La calidad con OpenAI depende del modelo y solo se puede evaluar con una API key.
+- La demo offline prueba la arquitectura, no la calidad de las decisiones de un LLM. La demo con
+  OpenAI se verificó con `gpt-4.1-mini` (14/10/2026): recorrió los 7 pasos sin errores, calculó
+  20% con los valores investigados y citó fuentes reales. Al ser un LLM, otra ejecución puede
+  tomar decisiones distintas (por ejemplo, pedir un refinamiento).
 - La rúbrica la aplica el LLM del Supervisor; las garantías deterministas son las guardas
   (prerrequisitos, `FINISH` sin informe, límite de pasos) y las validaciones Pydantic.
 - La verificación de citas comprueba que aparezca al menos un `source_id` real, no que cada
   afirmación del informe esté respaldada.
 - `quality_feedback` es un único campo: el feedback va siempre al próximo especialista elegido.
 - El Supervisor hace una llamada al LLM por paso (costo y latencia extra frente a una secuencia).
-- El modo estricto de *structured outputs* de OpenAI admite `minLength` y similares en los
-  modelos base actuales, pero no en modelos *fine-tuned*.
+- Los esquemas usan `minLength`, `minItems` y rangos numéricos, que el modo estricto de
+  *structured outputs* de OpenAI admite en los modelos base (verificado con `gpt-4.1-mini`), pero
+  no en modelos *fine-tuned*.
+- Con datos irrelevantes en la búsqueda, Síntesis puede incluirlos como evidencia adicional (en
+  la corrida real citó también costo de instalación y satisfacción de clientes).
